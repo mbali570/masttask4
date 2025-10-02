@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Booking Service</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, pink, lightblue);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 350px;
+      text-align: center;
+    }
+    h1, h2 {
+      color: #ff1493;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      color: #1e90ff;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      background: linear-gradient(to right, #ff69b4, #1e90ff);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      min-width: 250px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="loginScreen">
+    <h1>Car Booking App</h1>
+    <label for="role">Login as:</label>
+    <select id="role">
+      <option value="">Select</option>
+      <option value="admin">Admin</option>
+      <option value="customer">Customer</option>
+    </select>
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div class="container" id="adminScreen" style="display:none;">
+    <h2>Add a Car</h2>
+    <label for="carMake">Car Make</label>
+    <input type="text" id="carMake">
+    <label for="carModel">Car Model</label>
+    <input type="text" id="carModel">
+    <label for="carCost">Cost per Day ($)</label>
+    <input type="number" id="carCost" min="1">
+    <button onclick="addCar()">Add Car</button>
+  </div>
+
+  <div class="container" id="customerScreen" style="display:none;">
+    <h2>Rent a Car</h2>
+    <label for="carList">Select Car</label>
+    <select id="carList"></select>
+    <label for="days">Number of Days</label>
+    <input type="number" id="days" min="1">
+    <button onclick="showModal()">Book Now</button>
+  </div>
+
+  <div class="modal" id="bookingModal">
+    <div class="modal-content">
+      <p id="bookingDetails"></p>
+      <button onclick="confirmBooking()">Confirm</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="container" id="confirmationScreen" style="display:none;">
+    <h2>Booking Confirmed</h2>
+    <p id="confirmationDetails"></p>
+    <button onclick="restart()">Book Another Car</button>
+  </div>
+
+  <script>
+    // Simple car booking logic
+    let cars = [];
+    let selectedCar = {};
+    let totalCost = 0;
+
+    function login() {
+      const role = document.getElementById("role").value;
+      document.getElementById("loginScreen").style.display = "none";
+      if (role === "admin") {
+        document.getElementById("adminScreen").style.display = "block";
+      } else if (role === "customer") {
+        updateCarList();
+        document.getElementById("customerScreen").style.display = "block";
+      }
+    }
+
+    function addCar() {
+      const make = document.getElementById("carMake").value.trim();
+      const model = document.getElementById("carModel").value.trim();
+      const cost = document.getElementById("carCost").value;
+      if (make && model && cost && !isNaN(cost) && Number(cost) > 0) {
+        cars.push({ make, model, cost: Number(cost) });
+        alert("Car Added Successfully!");
+        document.getElementById("carMake").value = "";
+        document.getElementById("carModel").value = "";
+        document.getElementById("carCost").value = "";
+        updateCarList();
+      } else {
+        alert("Please enter valid car details and cost.");
+      }
+    }
+
+    function updateCarList() {
+      const carList = document.getElementById("carList");
+      carList.innerHTML = "";
+      if (cars.length === 0) {
+        let option = document.createElement("option");
+        option.value = "";
+        option.text = "No cars available";
+        carList.appendChild(option);
+      } else {
+        cars.forEach((car, index) => {
+          let option = document.createElement("option");
+          option.value = index;
+          option.text = car.make + " " + car.model + " - $" + car.cost + "/day";
+          carList.appendChild(option);
+        });
+      }
+    }
+
+    function showModal() {
+      const carIndex = document.getElementById("carList").value;
+      const days = document.getElementById("days").value;
+      if (carIndex === "" || days === "" || isNaN(days) || Number(days) < 1) {
+        alert("Please select a car and enter a valid number of days");
+        return;
+      }
+      selectedCar = cars[carIndex];
+      totalCost = Number(days) * selectedCar.cost;
+      document.getElementById("bookingDetails").innerText =
+        "Car: " + selectedCar.make + " " + selectedCar.model + "\nDays: " + days + "\nTotal: $" + totalCost;
+      document.getElementById("bookingModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("bookingModal").style.display = "none";
+    }
+
+    function confirmBooking() {
+      const days = document.getElementById("days").value;
+      document.getElementById("confirmationDetails").innerText =
+        "Car: " + selectedCar.make + " " + selectedCar.model + "\nDays: " + days + "\nTotal Due: $" + totalCost;
+      closeModal();
+      document.getElementById("customerScreen").style.display = "none";
+      document.getElementById("confirmationScreen").style.display = "block";
+    }
+
+    function restart() {
+      document.getElementById("confirmationScreen").style.display = "none";
+      document.getElementById("loginScreen").style.display = "block";
+      document.getElementById("role").value = "";
+    }
+  </script>
+</body>
+</html>
